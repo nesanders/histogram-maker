@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Histogram Maker</title>
+<meta name="description" content="Paste data and explore its distribution with an adjustable, interactive histogram.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Histogram Maker</h1>
+  <p class="subtitle">Paste numbers to see how they're distributed.</p>
+</header>
+
+<main>
+  <section class="panel controls" aria-label="Controls">
+    <label for="data-input">Data <span class="hint">(comma, space, or newline separated)</span></label>
+    <textarea id="data-input" rows="8" spellcheck="false"></textarea>
+
+    <div class="control-row">
+      <label for="bin-count">Bins: <output id="bin-count-value" for="bin-count">10</output></label>
+      <input type="range" id="bin-count" min="1" max="40" value="10">
+    </div>
+
+    <div class="control-row bounds-row">
+      <div class="bound-field">
+        <label for="x-min">X min</label>
+        <input type="number" id="x-min" step="any">
+      </div>
+      <div class="bound-field">
+        <label for="x-max">X max</label>
+        <input type="number" id="x-max" step="any">
+      </div>
+      <button type="button" id="reset-bounds">Reset</button>
+    </div>
+
+    <div class="control-row checkbox-row">
+      <label class="checkbox"><input type="checkbox" id="remove-outliers"> Remove outliers</label>
+      <span class="hint">flagged using the 1.5×IQR rule</span>
+    </div>
+  </section>
+
+  <section class="panel chart-panel" aria-label="Histogram">
+    <svg id="chart" viewBox="0 0 640 380" role="img" aria-label="Histogram of the entered data"></svg>
+    <div id="legend" class="legend" hidden>
+      <span class="swatch swatch-normal"></span> data
+      <span class="swatch swatch-outlier"></span> outlier
+    </div>
+    <p id="out-of-range" class="hint out-of-range" hidden></p>
+  </section>
+
+  <section class="panel stats" aria-label="Summary statistics">
+    <dl id="stats-list"></dl>
+  </section>
+</main>
+
+<footer>
+  <p>Runs entirely in your browser &mdash; nothing is uploaded.</p>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
