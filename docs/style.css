@@ -108,10 +108,12 @@ input[type="range"] { width: 100%; }
   gap: 0.5rem;
 }
 
-.bound-field { flex: 1; }
+.bound-field { flex: 1; min-width: 0; }
 
-input[type="number"] {
+input[type="number"],
+input[type="text"] {
   width: 100%;
+  min-width: 0;
   font: inherit;
   font-size: 0.85rem;
   padding: 0.4rem 0.5rem;
