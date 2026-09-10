@@ -6,11 +6,16 @@
   const xMaxInput = document.getElementById('x-max');
   const resetBoundsBtn = document.getElementById('reset-bounds');
   const removeOutliersInput = document.getElementById('remove-outliers');
+  const titleInput = document.getElementById('chart-title');
+  const xLabelInput = document.getElementById('x-label');
+  const yLabelInput = document.getElementById('y-label');
+  const exportBtn = document.getElementById('export-png');
   const svg = document.getElementById('chart');
   const legend = document.getElementById('legend');
   const outOfRangeEl = document.getElementById('out-of-range');
   const statsList = document.getElementById('stats-list');
 
+  const FONT = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
   const SAMPLE = [
     72, 75, 78, 81, 68, 74, 79, 83, 70, 76, 77, 80, 73, 85, 69, 71, 90, 66,
     74, 78, 82, 76, 73, 79, 84, 25, 77, 71, 95, 69
@@ -19,6 +24,21 @@
 
   // Only re-derive x-axis bounds from the data while the user hasn't overridden them.
   const boundsTouched = { min: false, max: false };
+
+  // Colors resolved from CSS variables so the exported SVG/PNG is self-contained.
+  let colors = {};
+  function resolveColors() {
+    const cs = getComputedStyle(document.documentElement);
+    const get = name => cs.getPropertyValue(name).trim();
+    colors = {
+      panel: get('--panel'),
+      text: get('--text'),
+      muted: get('--muted'),
+      border: get('--border'),
+      accent: get('--accent'),
+      outlier: get('--outlier')
+    };
+  }
 
   function parseData(text) {
     return text
@@ -68,6 +88,7 @@
   }
 
   function render() {
+    resolveColors();
     const raw = parseData(dataInput.value);
     const sorted = [...raw].sort((a, b) => a - b);
 
@@ -120,16 +141,30 @@
     const hasOutliers = !removeOutliers && outCounts.some(c => c > 0);
     legend.hidden = !hasOutliers;
 
-    drawChart(inCounts, outCounts, xMin, xMax, nBins);
+    drawChart(inCounts, outCounts, xMin, xMax, nBins, titleInput.value, xLabelInput.value, yLabelInput.value);
     renderStats(raw, working, removeOutliers, bounds, isOutlier);
   }
 
-  function drawChart(inCounts, outCounts, xMin, xMax, nBins) {
+  function drawChart(inCounts, outCounts, xMin, xMax, nBins, titleText, xLabelText, yLabelText) {
     svg.innerHTML = '';
-    const W = 640, H = 380;
-    const margin = { top: 16, right: 16, bottom: 36, left: 40 };
+    const hasTitle = titleText.trim().length > 0;
+    const hasXLabel = xLabelText.trim().length > 0;
+    const hasYLabel = yLabelText.trim().length > 0;
+
+    const W = 640, H = 420;
+    svg.setAttribute('width', W);
+    svg.setAttribute('height', H);
+    const margin = {
+      top: 16 + (hasTitle ? 26 : 0),
+      right: 16,
+      bottom: 36 + (hasXLabel ? 20 : 0),
+      left: 40 + (hasYLabel ? 16 : 0)
+    };
     const chartW = W - margin.left - margin.right;
     const chartH = H - margin.top - margin.bottom;
+
+    const bg = svgEl('rect', { x: 0, y: 0, width: W, height: H, fill: colors.panel });
+    svg.appendChild(bg);
 
     const totals = inCounts.map((c, i) => c + outCounts[i]);
     const maxCount = Math.max(1, ...totals);
@@ -139,22 +174,25 @@
     const xScale = v => margin.left + ((v - xMin) / (xMax - xMin)) * chartW;
     const yScale = c => margin.top + chartH - (c / yMax) * chartH;
 
-    const axisG = svgEl('g', { class: 'axis' });
+    const axisG = svgEl('g', {});
+    const textAttrs = { fill: colors.muted, 'font-size': 9, 'font-family': FONT };
 
     // gridlines + y ticks
     for (let y = 0; y <= yMax; y += yStep) {
       const yPos = yScale(y);
       axisG.appendChild(svgEl('line', {
-        class: 'gridline', x1: margin.left, x2: W - margin.right, y1: yPos, y2: yPos
+        x1: margin.left, x2: W - margin.right, y1: yPos, y2: yPos,
+        stroke: colors.border, 'stroke-dasharray': '2 2'
       }));
-      const label = svgEl('text', { x: margin.left - 6, y: yPos + 3, 'text-anchor': 'end' });
+      const label = svgEl('text', { ...textAttrs, x: margin.left - 6, y: yPos + 3, 'text-anchor': 'end' });
       label.textContent = formatNum(y);
       axisG.appendChild(label);
     }
 
     // x axis line
     axisG.appendChild(svgEl('line', {
-      x1: margin.left, x2: W - margin.right, y1: margin.top + chartH, y2: margin.top + chartH
+      x1: margin.left, x2: W - margin.right, y1: margin.top + chartH, y2: margin.top + chartH,
+      stroke: colors.border
     }));
 
     // x tick labels: thin out if many bins
@@ -163,10 +201,39 @@
       const v = xMin + (i * (xMax - xMin)) / nBins;
       const xPos = xScale(v);
       axisG.appendChild(svgEl('line', {
-        x1: xPos, x2: xPos, y1: margin.top + chartH, y2: margin.top + chartH + 4
+        x1: xPos, x2: xPos, y1: margin.top + chartH, y2: margin.top + chartH + 4,
+        stroke: colors.border
       }));
-      const label = svgEl('text', { x: xPos, y: margin.top + chartH + 16, 'text-anchor': 'middle' });
+      const label = svgEl('text', { ...textAttrs, x: xPos, y: margin.top + chartH + 16, 'text-anchor': 'middle' });
       label.textContent = formatNum(v);
+      axisG.appendChild(label);
+    }
+
+    if (hasTitle) {
+      const title = svgEl('text', {
+        x: W / 2, y: 24, 'text-anchor': 'middle', fill: colors.text,
+        'font-size': 15, 'font-weight': 600, 'font-family': FONT
+      });
+      title.textContent = titleText;
+      axisG.appendChild(title);
+    }
+
+    if (hasXLabel) {
+      const label = svgEl('text', {
+        x: margin.left + chartW / 2, y: H - 8, 'text-anchor': 'middle',
+        fill: colors.text, 'font-size': 11, 'font-family': FONT
+      });
+      label.textContent = xLabelText;
+      axisG.appendChild(label);
+    }
+
+    if (hasYLabel) {
+      const lx = 14, ly = margin.top + chartH / 2;
+      const label = svgEl('text', {
+        x: lx, y: ly, 'text-anchor': 'middle', fill: colors.text,
+        'font-size': 11, 'font-family': FONT, transform: `rotate(-90 ${lx} ${ly})`
+      });
+      label.textContent = yLabelText;
       axisG.appendChild(label);
     }
 
@@ -184,14 +251,14 @@
       if (inC > 0) {
         const yTop = yScale(inC);
         barsG.appendChild(svgEl('rect', {
-          class: 'bar-normal', x: x0, y: yTop, width: barW, height: margin.top + chartH - yTop
+          x: x0, y: yTop, width: barW, height: margin.top + chartH - yTop, fill: colors.accent
         }));
       }
       if (outC > 0) {
         const yBase = margin.top + chartH - (inC / yMax) * chartH;
         const yTop = yScale(inC + outC);
         barsG.appendChild(svgEl('rect', {
-          class: 'bar-outlier', x: x0, y: yTop, width: barW, height: yBase - yTop
+          x: x0, y: yTop, width: barW, height: yBase - yTop, fill: colors.outlier
         }));
       }
     }
@@ -232,9 +299,42 @@
     stat('Outliers', removeOutliers ? `${outlierCount} removed` : String(outlierCount));
   }
 
+  function exportPNG() {
+    const scale = 2;
+    const w = parseFloat(svg.getAttribute('width'));
+    const h = parseFloat(svg.getAttribute('height'));
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = w * scale;
+      canvas.height = h * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(scale, scale);
+      ctx.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(blob => {
+        const link = document.createElement('a');
+        link.download = 'histogram.png';
+        link.href = URL.createObjectURL(blob);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+      });
+    };
+    img.src = url;
+  }
+
   dataInput.addEventListener('input', render);
   binCountInput.addEventListener('input', render);
   removeOutliersInput.addEventListener('change', render);
+  titleInput.addEventListener('input', render);
+  xLabelInput.addEventListener('input', render);
+  yLabelInput.addEventListener('input', render);
   xMinInput.addEventListener('input', () => { boundsTouched.min = true; render(); });
   xMaxInput.addEventListener('input', () => { boundsTouched.max = true; render(); });
   resetBoundsBtn.addEventListener('click', () => {
@@ -242,6 +342,7 @@
     boundsTouched.max = false;
     render();
   });
+  exportBtn.addEventListener('click', exportPNG);
 
   render();
 })();

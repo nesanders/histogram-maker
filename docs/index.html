@@ -39,15 +39,32 @@
       <label class="checkbox"><input type="checkbox" id="remove-outliers"> Remove outliers</label>
       <span class="hint">flagged using the 1.5×IQR rule</span>
     </div>
+
+    <div class="control-row">
+      <label for="chart-title">Title</label>
+      <input type="text" id="chart-title" placeholder="Untitled histogram">
+    </div>
+
+    <div class="control-row bounds-row">
+      <div class="bound-field">
+        <label for="x-label">X axis label</label>
+        <input type="text" id="x-label" value="Value">
+      </div>
+      <div class="bound-field">
+        <label for="y-label">Y axis label</label>
+        <input type="text" id="y-label" value="Frequency">
+      </div>
+    </div>
   </section>
 
   <section class="panel chart-panel" aria-label="Histogram">
-    <svg id="chart" viewBox="0 0 640 380" role="img" aria-label="Histogram of the entered data"></svg>
+    <svg id="chart" viewBox="0 0 640 420" role="img" aria-label="Histogram of the entered data"></svg>
     <div id="legend" class="legend" hidden>
       <span class="swatch swatch-normal"></span> data
       <span class="swatch swatch-outlier"></span> outlier
     </div>
     <p id="out-of-range" class="hint out-of-range" hidden></p>
+    <button type="button" id="export-png">Download PNG</button>
   </section>
 
   <section class="panel stats" aria-label="Summary statistics">

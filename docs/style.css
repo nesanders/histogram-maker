@@ -156,23 +156,6 @@ button:hover { border-color: var(--accent); }
   display: block;
 }
 
-.bar-normal { fill: var(--accent); }
-.bar-outlier { fill: var(--outlier); }
-
-.axis line, .axis path {
-  stroke: var(--border);
-}
-
-.axis text {
-  fill: var(--muted);
-  font-size: 9px;
-}
-
-.gridline {
-  stroke: var(--border);
-  stroke-dasharray: 2 2;
-}
-
 .legend {
   display: flex;
   align-items: center;
@@ -198,6 +181,8 @@ button:hover { border-color: var(--accent); }
 [hidden] { display: none !important; }
 
 .out-of-range { margin: 0.4rem 0 0; }
+
+#export-png { margin-top: 0.75rem; }
 
 #stats-list {
   margin: 0;
