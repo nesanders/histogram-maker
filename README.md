@@ -10,4 +10,4 @@ A small client-side tool for building histograms from pasted data. No build step
 
 ## Deploying to GitHub Pages
 
-Push to `main` and enable Pages for the repo (Settings &rarr; Pages &rarr; Deploy from branch), pointing at the root of this branch. No build step is required.
+The site lives in `docs/`. Enable Pages for the repo (Settings &rarr; Pages &rarr; Deploy from branch), pointing at this branch's `/docs` folder. No build step is required.
